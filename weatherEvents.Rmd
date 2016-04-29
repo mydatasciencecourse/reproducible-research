@@ -71,19 +71,17 @@ averagedByEventtype=dcast(molten, evtype ~ variable, sum)
 Now, lets sort the events and look at the cummulative distribution. Lets concentrate in the following on the events which causes 90% of the fatalities or injuries.
 
 ```{r}
+library(ggplot2)
+library(plotly)
+
 orderedByFatalities=averagedByEventtype[sort(averagedByEventtype$fatalities, index.return=T, dec=T)$ix, ]
 orderedByInjuries=averagedByEventtype[sort(averagedByEventtype$injuries, index.return=T, dec=T)$ix, ]
 
-summedFatalities=sum(averagedByEventtype$fatalities)
-summedInjuries=sum(averagedByEventtype$injuries)
+incrementedFatalities=Reduce(function(x, y){append(x, y+tail(x, n=1))}, orderedByFatalities$fatalities, 0)
 
+topFatalities=orderedByFatalities[summed<0.9*tail(summed, n=1),]
 
-
-
-
-topFatalities=orderedByFatalities[orderedByFatalities$fatalities>fatalitiesQuantile[4],]
-
-plot(topFatalities$evtype, topFatalities$fatalities)
+qplot(ordered(topFatalities$evtype, levels=topFatalities$evtype), topFatalities$fatalities)+geom_bar(stat = "identity")
 
 topInjuries=orderedByInjuries[orderedByInjuries$injuries>quantile(orderedByInjuries$injuries, 0.9),]
 ```
