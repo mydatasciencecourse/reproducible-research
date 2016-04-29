@@ -1,0 +1,93 @@
+---
+title: "Health and economic effects of weather events"
+author: "FD"
+date: "29 April 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Health and economic effects of weather events
+
+## Summary
+
+## Data processing
+
+### Data loading
+
+The data is downloaded from the course website if not existing in the current working directory.
+
+Information about the data can be found at the following locations:
+
+- [National Weather Service Storm Data Documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf)
+- [National Climatic Data Center Storm Events FAQ](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2FNCDC%20Storm%20Events-FAQ%20Page.pdf)
+
+According to the documentation, just direct fatalities and injuries are part of the database. Indirect fatalities and injuries are not reported in its own field.
+
+```{r}
+if(!file.exists("repdata-data-StormData.csv.bz2")) {
+  download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2")
+}
+#data=read.csv(bzfile("repdata-data-StormData.csv.bz2"))
+```
+
+### Data clean up
+
+Data column names are normalized to lower case letters.
+
+```{r}
+library(dplyr)
+
+colnames(data)=tolower(colnames(data))
+```
+
+Many event types in the data set are doubled like: Damaging Freeze, DAMAGING FREEZE but also more complex cases like: DOWNBURST, DOWNBURST WINDS. To encount for the simplest cases, the event types are normalized to lower case before the analysis is done.
+
+```{r}
+data$evtype<-tolower(data$evtype)
+```
+  
+Additionally, two data sets are prepared which fits the need of the following analysis.
+
+```{r}
+eventData=select(data, evtype, fatalities, injuries)
+```
+
+## Most harmful events with respect to population health
+
+Population health is summarized by fatalities and injuries. For each of these categories, there is a column in the data set.
+
+To answer the question which events are most harmful, the data has to be summarized by event type.
+
+```{r}
+library(reshape2)
+
+molten=melt(eventData, id.vars=c("evtype"))
+averagedByEventtype=dcast(molten, evtype ~ variable, sum)
+```
+
+Now, lets sort the events and look at the cummulative distribution. Lets concentrate in the following on the events which causes 90% of the fatalities or injuries.
+
+```{r}
+orderedByFatalities=averagedByEventtype[sort(averagedByEventtype$fatalities, index.return=T, dec=T)$ix, ]
+orderedByInjuries=averagedByEventtype[sort(averagedByEventtype$injuries, index.return=T, dec=T)$ix, ]
+
+summedFatalities=sum(averagedByEventtype$fatalities)
+summedInjuries=sum(averagedByEventtype$injuries)
+
+
+
+
+
+topFatalities=orderedByFatalities[orderedByFatalities$fatalities>fatalitiesQuantile[4],]
+
+plot(topFatalities$evtype, topFatalities$fatalities)
+
+topInjuries=orderedByInjuries[orderedByInjuries$injuries>quantile(orderedByInjuries$injuries, 0.9),]
+```
+
+## Events with the greatest economic consequences
+
+## Results
